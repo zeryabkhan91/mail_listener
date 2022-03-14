@@ -1,18 +1,27 @@
-import { Controller } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
-import { AppService } from './app.service';
+import { Controller, Inject } from '@nestjs/common';
+import { ClientProxy, EventPattern } from '@nestjs/microservices';
 import { MailService } from './mail/mail.service';
 import { Email } from './mail/models/email.interface';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly appService: AppService,
-    private readonly mailService: MailService
+    private readonly mailService: MailService,
+    @Inject('TEST_SERVICE')
+    private readonly client: ClientProxy
   ) {}
 
   @EventPattern('send_email')
   async sendEmail(email: Email) {
-    await this.mailService.sendEmail(email);
+    try {
+      console.log('Mail Listener:: Received Email', email);
+
+      await this.mailService.sendEmail(email);
+
+      console.log('Mail Listener:: Email Sent');
+    } catch (err) {
+      this.client.emit('email_failed', email);
+      console.log('Something bad happened at server', err);
+    }
   }
 }

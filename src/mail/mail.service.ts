@@ -10,11 +10,14 @@ export class MailService {
   }
 
   getEmail(data: Email): SendGrid.MailDataRequired {
+    const templateId = JSON.parse(data.template).templateKey;
+    delete data.template;
+
     return {
       to: data.email,
       from: this.configService.get<string>('SEND_GRID_SENDER'),
       subject: data.subject,
-      templateId: data.template,
+      templateId,
       dynamicTemplateData: data
     };
   }
@@ -23,7 +26,7 @@ export class MailService {
     try {
       const emailTemplate = this.getEmail(data);
 
-      return await SendGrid.send(emailTemplate);
+      await SendGrid.send(emailTemplate);
     } catch (err) {
       console.log(`Error: ${err}`);
     }
