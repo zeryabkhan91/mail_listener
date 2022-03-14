@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as SendGrid from '@sendgrid/mail';
 import { ConfigService } from '@nestjs/config';
 import { Email } from './models/email.interface';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class MailService {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject('TEST_SERVICE')
+    private readonly client: ClientProxy
+  ) {
     SendGrid.setApiKey(this.configService.get<string>('SEND_GRID_API'));
   }
 
@@ -28,6 +33,7 @@ export class MailService {
 
       await SendGrid.send(emailTemplate);
     } catch (err) {
+      this.client.emit('email_failed', data);
       console.log(`Error: ${err}`);
     }
   }
